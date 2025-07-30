@@ -3,17 +3,40 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack -p 4000",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cap:init": "npx cap init",
+    "cap:add:android": "npx cap add android",
+    "cap:add:ios": "npx cap add ios",
+    "cap:sync": "npx cap sync",
+    "cap:open:android": "npx cap open android",
+    "cap:open:ios": "npx cap open ios",
+    "cap:build:android": "npm run build && npx cap sync android && npx cap open android",
+    "cap:build:ios": "npm run build && npx cap sync ios && npx cap open ios",
+    "ios:setup": "cd ios && bundle install && cd App && pod install",
+    "ios:beta": "npm run build && npx cap sync ios && cd ios && bundle exec fastlane beta",
+    "ios:release": "npm run build && npx cap sync ios && cd ios && bundle exec fastlane release",
+    "ios:match": "cd ios && bundle exec fastlane match appstore",
+    "ios:helper": "scripts/ios-setup-helper.sh",
+    "ios:helper:win": "scripts/ios-setup-helper.bat"
   },
   "dependencies": {
     "firebase": "^11.8.1",
     "firebase-admin": "^13.4.0",
     "next": "15.3.2",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/splash-screen": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
+    "@capacitor/push-notifications": "^6.0.0",
+    "@capacitor/local-notifications": "^6.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

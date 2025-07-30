@@ -1,0 +1,151 @@
+name: iOS 배포
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "package.json"
+      - "capacitor.config.ts"
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "빌드 타입"
+        required: true
+        default: "development"
+        type: choice
+        options:
+          - development
+          - testflight
+          - release
+
+env:
+  NODE_VERSION: "18"
+  XCODE_VERSION: "15.2"
+
+jobs:
+  build-ios:
+    name: iOS 앱 빌드 및 배포
+    runs-on: macos-14
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: Next.js 빌드
+        run: npm run build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_FIREBASE_VAPID_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_VAPID_KEY }}
+
+      - name: Capacitor 동기화
+        run: |
+          npx cap add ios
+          npx cap sync ios
+
+      - name: Xcode 버전 설정
+        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app/Contents/Developer
+
+      - name: CocoaPods 의존성 설치
+        run: |
+          cd ios/App
+          pod install
+
+      - name: Apple 인증서 설정
+        uses: apple-actions/import-codesign-certs@v2
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATES_P12 }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATES_PASSWORD }}
+
+      - name: 프로비저닝 프로필 설정
+        uses: apple-actions/download-provisioning-profiles@v1
+        with:
+          bundle-id: com.example.twatest
+          issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
+          api-key-id: ${{ secrets.APPSTORE_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_PRIVATE_KEY }}
+
+      - name: Firebase 설정 파일 추가
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 --decode > ios/App/App/GoogleService-Info.plist
+
+      - name: iOS 앱 빌드 (Development)
+        if: github.event.inputs.build_type == 'development' || github.event.inputs.build_type == ''
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -destination generic/platform=iOS \
+            -archivePath build/App.xcarchive \
+            archive
+
+      - name: iOS 앱 빌드 (Release)
+        if: github.event.inputs.build_type == 'testflight' || github.event.inputs.build_type == 'release'
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination generic/platform=iOS \
+            -archivePath build/App.xcarchive \
+            archive
+
+      - name: IPA 파일 생성
+        if: github.event.inputs.build_type == 'testflight' || github.event.inputs.build_type == 'release'
+        run: |
+          cd ios/App
+          xcodebuild -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportPath build/ \
+            -exportOptionsPlist exportOptions.plist
+
+      - name: TestFlight 업로드
+        if: github.event.inputs.build_type == 'testflight'
+        run: |
+          cd ios/App/build
+          xcrun altool --upload-app \
+            --type ios \
+            --file *.ipa \
+            --username ${{ secrets.APPLE_ID_EMAIL }} \
+            --password ${{ secrets.APPLE_ID_PASSWORD }}
+
+      - name: App Store 업로드
+        if: github.event.inputs.build_type == 'release'
+        run: |
+          cd ios/App/build
+          xcrun altool --upload-app \
+            --type ios \
+            --file *.ipa \
+            --username ${{ secrets.APPLE_ID_EMAIL }} \
+            --password ${{ secrets.APPLE_ID_PASSWORD }}
+
+      - name: 아티팩트 업로드 (Development)
+        if: github.event.inputs.build_type == 'development' || github.event.inputs.build_type == ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app-development
+          path: ios/App/build/App.xcarchive
+          retention-days: 7
+
+      - name: 아티팩트 업로드 (IPA)
+        if: github.event.inputs.build_type == 'testflight' || github.event.inputs.build_type == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app-ipa
+          path: ios/App/build/*.ipa
+          retention-days: 30

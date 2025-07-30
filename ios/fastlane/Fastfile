@@ -1,0 +1,95 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Push a new beta build to TestFlight"
+  lane :beta do
+    # CocoaPods 의존성 설치
+    cocoapods(
+      podfile: "App/Podfile"
+    )
+    
+    # 인증서 및 프로비저닝 프로필 동기화
+    sync_code_signing(
+      type: "appstore",
+      readonly: true
+    )
+    
+    # 빌드 번호 증가
+    increment_build_number(
+      xcodeproj: "App/App.xcodeproj"
+    )
+    
+    # 앱 빌드
+    gym(
+      workspace: "App/App.xcworkspace",
+      scheme: "App",
+      export_method: "app-store",
+      configuration: "Release",
+      output_directory: "./build",
+      output_name: "TWA-Test.ipa"
+    )
+    
+    # TestFlight 업로드
+    pilot(
+      skip_waiting_for_build_processing: true,
+      skip_submission: true
+    )
+  end
+
+  desc "Push a new release build to the App Store"
+  lane :release do
+    # CocoaPods 의존성 설치
+    cocoapods(
+      podfile: "App/Podfile"
+    )
+    
+    # 인증서 및 프로비저닝 프로필 동기화
+    sync_code_signing(
+      type: "appstore",
+      readonly: true
+    )
+    
+    # 빌드 번호 증가
+    increment_build_number(
+      xcodeproj: "App/App.xcodeproj"
+    )
+    
+    # 앱 빌드
+    gym(
+      workspace: "App/App.xcworkspace",
+      scheme: "App",
+      export_method: "app-store",
+      configuration: "Release",
+      output_directory: "./build",
+      output_name: "TWA-Test.ipa"
+    )
+    
+    # App Store Connect 업로드
+    deliver(
+      force: true,
+      submit_for_review: false
+    )
+  end
+  
+  desc "Setup code signing using match"
+  lane :setup_ci do
+    setup_ci
+    
+    sync_code_signing(
+      type: "appstore",
+      readonly: true
+    )
+  end
+end 

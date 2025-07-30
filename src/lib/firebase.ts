@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { Capacitor } from "@capacitor/core";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -24,11 +25,15 @@ console.log("Firebase 설정 상태:", {
 // 필수 환경 변수 확인
 const missingEnvVars = [];
 if (!firebaseConfig.apiKey) missingEnvVars.push("NEXT_PUBLIC_FIREBASE_API_KEY");
-if (!firebaseConfig.authDomain) missingEnvVars.push("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN");
-if (!firebaseConfig.projectId) missingEnvVars.push("NEXT_PUBLIC_FIREBASE_PROJECT_ID");
-if (!firebaseConfig.messagingSenderId) missingEnvVars.push("NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID");
+if (!firebaseConfig.authDomain)
+  missingEnvVars.push("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN");
+if (!firebaseConfig.projectId)
+  missingEnvVars.push("NEXT_PUBLIC_FIREBASE_PROJECT_ID");
+if (!firebaseConfig.messagingSenderId)
+  missingEnvVars.push("NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID");
 if (!firebaseConfig.appId) missingEnvVars.push("NEXT_PUBLIC_FIREBASE_APP_ID");
-if (!process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY) missingEnvVars.push("NEXT_PUBLIC_FIREBASE_VAPID_KEY");
+if (!process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY)
+  missingEnvVars.push("NEXT_PUBLIC_FIREBASE_VAPID_KEY");
 
 if (missingEnvVars.length > 0) {
   console.error("누락된 Firebase 환경 변수:", missingEnvVars);
@@ -45,13 +50,23 @@ if (typeof window !== "undefined") {
 export const requestNotificationPermission = async () => {
   if (!messaging) {
     console.error("Firebase messaging이 초기화되지 않았습니다.");
-    return { success: false, error: "Firebase messaging not initialized", permission: null, token: null };
+    return {
+      success: false,
+      error: "Firebase messaging not initialized",
+      permission: null,
+      token: null,
+    };
   }
 
   // VAPID 키 확인
   if (!process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY) {
     console.error("VAPID 키가 설정되지 않았습니다.");
-    return { success: false, error: "VAPID key not configured", permission: null, token: null };
+    return {
+      success: false,
+      error: "VAPID key not configured",
+      permission: null,
+      token: null,
+    };
   }
 
   try {
@@ -85,22 +100,47 @@ export const requestNotificationPermission = async () => {
           return { success: true, permission, token, error: null };
         } else {
           console.error("FCM 토큰 생성 실패: 토큰이 null입니다.");
-          return { success: false, permission, token: null, error: "FCM token generation failed" };
+          return {
+            success: false,
+            permission,
+            token: null,
+            error: "FCM token generation failed",
+          };
         }
       } catch (tokenError) {
         console.error("FCM 토큰 생성 중 오류:", tokenError);
-        return { success: false, permission, token: null, error: `FCM token error: ${tokenError}` };
+        return {
+          success: false,
+          permission,
+          token: null,
+          error: `FCM token error: ${tokenError}`,
+        };
       }
     } else if (permission === "denied") {
       console.log("사용자가 알림 권한을 거부했습니다.");
-      return { success: false, permission, token: null, error: "Permission denied by user" };
+      return {
+        success: false,
+        permission,
+        token: null,
+        error: "Permission denied by user",
+      };
     } else {
       console.log("알림 권한이 기본값(default)입니다.");
-      return { success: false, permission, token: null, error: "Permission is default" };
+      return {
+        success: false,
+        permission,
+        token: null,
+        error: "Permission is default",
+      };
     }
   } catch (error) {
     console.error("알림 권한 요청 중 오류:", error);
-    return { success: false, permission: null, token: null, error: `Permission request failed: ${error}` };
+    return {
+      success: false,
+      permission: null,
+      token: null,
+      error: `Permission request failed: ${error}`,
+    };
   }
 };
 
@@ -115,3 +155,12 @@ export const onMessageListener = () =>
   });
 
 export { messaging };
+
+// Capacitor 환경 감지를 위한 helper 함수
+export const isNativeApp = () => {
+  return Capacitor.isNativePlatform();
+};
+
+export const getPlatform = () => {
+  return Capacitor.getPlatform();
+};

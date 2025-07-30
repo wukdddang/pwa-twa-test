@@ -9,6 +9,9 @@ PWA(Progressive Web App) 및 TWA(Trusted Web Activity) 기능을 테스트하기
 - ✅ 서비스 워커 지원
 - ✅ 오프라인 캐싱
 - ✅ 반응형 디자인
+- 🆕 **Capacitor 네이티브 앱 배포** (Android/iOS)
+- 🆕 **GitHub Actions 자동 배포**
+- 🆕 **Fastlane 배포 자동화**
 
 ## 시작하기
 
@@ -50,6 +53,21 @@ bun dev
 ```
 
 브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 결과를 확인하세요.
+
+### 6. 모바일 앱 개발 (선택사항)
+
+Capacitor를 사용하여 네이티브 모바일 앱으로 빌드할 수 있습니다:
+
+```bash
+# 안드로이드 개발
+npm run cap:build:android
+
+# iOS 개발 (macOS만 가능)
+npm run cap:build:ios
+
+# iOS 배포 헬퍼 실행
+npm run ios:helper:win  # Windows용
+```
 
 ## 사용 방법
 
@@ -111,9 +129,11 @@ public/
 
 ## 배포
 
+### 웹 배포
+
 Vercel, Netlify 등의 플랫폼에 배포할 때 환경 변수를 설정해야 합니다.
 
-### Vercel 배포
+#### Vercel 배포
 
 ```bash
 npm run build
@@ -121,3 +141,42 @@ vercel --prod
 ```
 
 환경 변수는 Vercel 대시보드에서 설정하세요.
+
+### 📱 모바일 앱 배포 (Capacitor)
+
+#### 안드로이드
+
+```bash
+# 안드로이드 프로젝트 생성 및 빌드
+npm run cap:build:android
+```
+
+#### iOS
+
+```bash
+# iOS 프로젝트 생성 및 빌드 (macOS만 가능)
+npm run cap:build:ios
+
+# iOS 배포 헬퍼 스크립트 실행
+npm run ios:helper:win  # Windows
+npm run ios:helper      # macOS/Linux
+
+# Fastlane을 통한 자동 배포
+npm run ios:beta        # TestFlight 배포
+npm run ios:release     # App Store 배포
+```
+
+#### GitHub Actions 자동 배포
+
+**iOS 자동 배포**: [iOS GitHub Actions 배포 가이드](./iOS-DEPLOYMENT-GUIDE.md) 참조
+
+1. GitHub Secrets 설정
+2. Apple Developer 계정 설정
+3. Fastlane Match 인증서 관리
+4. 자동 빌드 및 TestFlight/App Store 배포
+
+### 📚 상세 가이드
+
+- [📱 iOS GitHub Actions 자동 배포](./iOS-DEPLOYMENT-GUIDE.md)
+- [⚙️ Capacitor 공식 문서](https://capacitorjs.com/docs)
+- [🚀 Fastlane 문서](https://docs.fastlane.tools)

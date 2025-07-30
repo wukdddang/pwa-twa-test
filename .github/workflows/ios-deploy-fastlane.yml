@@ -1,0 +1,85 @@
+name: iOS 배포 (Fastlane)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "package.json"
+      - "capacitor.config.ts"
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: "Fastlane Lane"
+        required: true
+        default: "beta"
+        type: choice
+        options:
+          - beta
+          - release
+
+env:
+  NODE_VERSION: "18"
+
+jobs:
+  deploy-ios:
+    name: iOS 앱 빌드 및 배포 (Fastlane)
+    runs-on: macos-14
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Ruby 설정
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: Next.js 빌드
+        run: npm run build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_FIREBASE_VAPID_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_VAPID_KEY }}
+
+      - name: Capacitor 동기화
+        run: |
+          npx cap add ios
+          npx cap sync ios
+
+      - name: Firebase 설정 파일 추가
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 --decode > ios/App/App/GoogleService-Info.plist
+
+      - name: Fastlane 설정
+        run: |
+          cd ios
+          bundle install
+
+      - name: Fastlane 실행
+        run: |
+          cd ios
+          bundle exec fastlane ${{ github.event.inputs.lane || 'beta' }}
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID_EMAIL }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY: ${{ secrets.APPSTORE_PRIVATE_KEY }}

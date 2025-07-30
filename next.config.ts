@@ -1,36 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  reactStrictMode: true,
+  // Capacitor 정적 배포를 위한 설정
+  output: "export",
+  trailingSlash: true,
+  basePath: "",
+  assetPrefix: "",
 
-  // 빌드 시간을 환경 변수로 추가
-  env: {
-    BUILD_TIME: new Date().toISOString(),
-    BUILD_VERSION: `v1.0.${Math.floor(Date.now() / 1000)}`,
+  // 기존 설정들...
+  experimental: {
+    // 필요한 실험적 기능들
   },
 
-  // TWA와 PWA를 위한 추가 설정
-  async headers() {
-    return [
-      {
-        source: "/:path*",
-        headers: [
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "X-Frame-Options",
-            value: "DENY",
-          },
-          {
-            key: "X-XSS-Protection",
-            value: "1; mode=block",
-          },
-        ],
-      },
-    ];
+  // 이미지 최적화 비활성화 (정적 export에서 필요)
+  images: {
+    unoptimized: true,
   },
 };
 
