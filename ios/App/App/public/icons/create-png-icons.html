@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>SVG to PNG Converter</title>
+  </head>
+  <body>
+    <h1>SVG to PNG Icon Converter</h1>
+    <canvas id="canvas192" width="192" height="192" style="border: 1px solid #ccc; margin: 10px"></canvas>
+    <canvas id="canvas512" width="512" height="512" style="border: 1px solid #ccc; margin: 10px"></canvas>
+
+    <script>
+      // 간단한 아이콘 생성 함수
+      function createIcon(canvas, size) {
+        const ctx = canvas.getContext("2d");
+
+        // 배경 (흰색)
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, size, size);
+
+        // 테두리 (검은색)
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = size * 0.02;
+        ctx.strokeRect(0, 0, size, size);
+
+        // 중앙 원 (파란색)
+        ctx.fillStyle = "#007bff";
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size * 0.3, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // 텍스트 (흰색)
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `bold ${size * 0.15}px Arial`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("TWA", size / 2, size / 2);
+      }
+
+      // 192x192 아이콘 생성
+      const canvas192 = document.getElementById("canvas192");
+      createIcon(canvas192, 192);
+
+      // 512x512 아이콘 생성
+      const canvas512 = document.getElementById("canvas512");
+      createIcon(canvas512, 512);
+
+      // 다운로드 링크 생성
+      function createDownloadLink(canvas, filename) {
+        const link = document.createElement("a");
+        link.download = filename;
+        link.href = canvas.toDataURL("image/png");
+        link.textContent = `Download ${filename}`;
+        link.style.display = "block";
+        link.style.margin = "10px";
+        document.body.appendChild(link);
+      }
+
+      createDownloadLink(canvas192, "icon-192x192.png");
+      createDownloadLink(canvas512, "icon-512x512.png");
+
+      console.log("PNG 아이콘이 생성되었습니다. 다운로드 링크를 클릭하여 저장하세요.");
+    </script>
+  </body>
+</html>
